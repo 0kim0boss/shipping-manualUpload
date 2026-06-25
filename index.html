@@ -1,0 +1,1855 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carrier Format Studio</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b14;
+      --panel: #101624;
+      --panel-2: #151d2d;
+      --panel-3: #0d1320;
+      --line: #263248;
+      --line-soft: #1b2538;
+      --text: #eef4ff;
+      --muted: #8d9bb2;
+      --muted-2: #627086;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --cyan: #22d3ee;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #fb7185;
+      --radius: 8px;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .auth-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(59, 130, 246, 0.18), transparent 36%),
+        var(--bg);
+    }
+
+    .auth-panel {
+      width: min(360px, 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .auth-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .auth-error {
+      min-height: 18px;
+      color: var(--red);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .topbar {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line-soft);
+      background: rgba(8, 11, 20, 0.94);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      box-shadow: 0 12px 30px rgba(91, 91, 255, 0.32);
+    }
+
+    .mark svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.1;
+      font-weight: 750;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      border-radius: 8px;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .btn:hover {
+      border-color: #3d4d6a;
+      background: #1a2437;
+    }
+
+    .btn-primary {
+      min-width: 132px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border: 0;
+      box-shadow: 0 12px 28px rgba(59, 130, 246, 0.28);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      padding: 18px;
+      min-height: 0;
+    }
+
+    .main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .upload {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background:
+        linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(139, 92, 246, 0.1)),
+        var(--panel);
+    }
+
+    .upload-target {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .upload-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #101d32;
+      border: 1px solid #28405f;
+      color: var(--cyan);
+      flex: 0 0 auto;
+    }
+
+    .upload input {
+      display: none;
+    }
+
+    .upload h2 {
+      margin: 0 0 3px;
+      font-size: 15px;
+      font-weight: 750;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(110px, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      padding: 13px 14px;
+      background: var(--panel);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 420px;
+    }
+
+    .table-panel {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .table-head {
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px 0 16px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .tab {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #0c1220;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .tab.active {
+      color: #dbeafe;
+      border-color: #395f99;
+      background: #10213a;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      min-height: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1160px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line-soft);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: middle;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: #0c1220;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    td {
+      color: #d9e5f7;
+    }
+
+    tbody tr:hover {
+      background: rgba(59, 130, 246, 0.06);
+    }
+
+    tbody tr.active-row {
+      background: rgba(59, 130, 246, 0.12);
+      box-shadow: inset 3px 0 0 var(--blue);
+    }
+
+    .order-id {
+      font-weight: 800;
+      color: #f8fbff;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .carrier-select,
+    .cell-input,
+    .input,
+    .select {
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #0b1120;
+      color: var(--text);
+      padding: 0 10px;
+      outline: none;
+      font-size: 13px;
+    }
+
+    .carrier-select:focus,
+    .cell-input:focus,
+    .input:focus,
+    .select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+    }
+
+    .cell-input {
+      width: 100%;
+      min-width: 72px;
+      height: 32px;
+    }
+
+    .cell-input.weight-input {
+      max-width: 86px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: #0b1120;
+    }
+
+    .pill.ready {
+      color: #a7f3d0;
+      border-color: rgba(52, 211, 153, 0.32);
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    .pill.warn {
+      color: #fde68a;
+      border-color: rgba(251, 191, 36, 0.32);
+      background: rgba(251, 191, 36, 0.08);
+    }
+
+    .row-check {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--blue);
+    }
+
+    .side {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 14px;
+    }
+
+    .side-section {
+      padding: 16px;
+    }
+
+    .section-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .section-top h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .summary-row strong {
+      color: var(--text);
+    }
+
+    .log {
+      min-height: 190px;
+      padding: 12px;
+      overflow: auto;
+      background: #070b13;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .empty {
+      height: 100%;
+      min-height: 360px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      padding: 28px;
+    }
+
+    .empty svg {
+      width: 42px;
+      height: 42px;
+      margin-bottom: 12px;
+      color: var(--muted-2);
+    }
+
+    @media (max-width: 1100px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: auto;
+      }
+
+      .side .panel:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        height: auto;
+        gap: 12px;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px;
+      }
+
+      .toolbar,
+      .upload,
+      .upload-target {
+        width: 100%;
+      }
+
+      .upload {
+        grid-template-columns: 1fr;
+      }
+
+      .stats,
+      .side {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-panel">
+      <div class="auth-title">Carrier Format Studio</div>
+      <div class="subtle">Enter password to continue.</div>
+      <form class="auth-form" id="authForm">
+        <input class="input" id="passwordInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Password" autofocus>
+        <button class="btn btn-primary" type="submit">Enter</button>
+        <div class="auth-error" id="authError" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+
+  <div class="app" id="appRoot" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="m4.5 8 7.5 4.2L19.5 8M12 12.2V20" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Carrier Format Studio</h1>
+          <div class="subtle">Raw order data to FEDEX, DHL, Korea Post, ACI upload files</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="sampleBtn" type="button">Load Demo</button>
+        <button class="btn btn-primary" id="generateBtn" type="button" disabled>Generate</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="main">
+        <section class="upload panel">
+          <label class="upload-target" for="rawFile">
+            <span class="upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="21" height="21" fill="none">
+                <path d="M12 3v12m0-12 4 4m-4-4-4 4M5 15v4h14v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>
+              <h2 id="fileTitle">Upload raw data spreadsheet</h2>
+              <span class="subtle" id="fileHint">Accepts .xlsx, .xls, .csv. Orders are grouped by Order id.</span>
+            </span>
+          </label>
+          <input id="rawFile" type="file" accept=".xlsx,.xls,.csv">
+          <button class="btn" type="button" id="chooseBtn">Choose File</button>
+        </section>
+
+        <section class="stats" aria-label="Carrier summary">
+          <div class="stat"><span class="subtle">Orders</span><strong id="statOrders">0</strong></div>
+          <div class="stat"><span class="subtle">FEDEX</span><strong id="statFedex">0</strong></div>
+          <div class="stat"><span class="subtle">DHL</span><strong id="statDhl">0</strong></div>
+          <div class="stat"><span class="subtle">Korea Post</span><strong id="statKoreaPost">0</strong></div>
+          <div class="stat"><span class="subtle">ACI</span><strong id="statAci">0</strong></div>
+        </section>
+
+        <section class="content-grid panel table-panel">
+          <div class="table-head">
+            <div>
+              <div class="table-title">Order list</div>
+              <div class="subtle">Select the final carrier per order before generating files.</div>
+            </div>
+            <div class="table-actions">
+              <div class="tabs" id="carrierTabs">
+                <button class="tab active" type="button" data-filter="ALL">All</button>
+                <button class="tab" type="button" data-filter="FEDEX">FEDEX</button>
+                <button class="tab" type="button" data-filter="DHL">DHL</button>
+                <button class="tab" type="button" data-filter="KOREA_POST">Korea Post</button>
+                <button class="tab" type="button" data-filter="ACI">ACI</button>
+              </div>
+              <button class="btn" id="deleteSelectedBtn" type="button" disabled>Delete Selected</button>
+              <button class="btn" id="clearListBtn" type="button" disabled>Clear List</button>
+            </div>
+          </div>
+          <div class="table-wrap" id="tableWrap">
+            <div class="empty" id="emptyState">
+              <div>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 5h16v14H4V5Zm0 4h16M8 5v14" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+                <div>No orders loaded yet.</div>
+                <div class="subtle">Upload raw data or load the demo sample.</div>
+              </div>
+            </div>
+            <table id="ordersTable" hidden>
+              <thead>
+                <tr>
+                  <th><input class="row-check" id="selectAllOrders" type="checkbox" aria-label="Select all orders"></th>
+                  <th>Order ID</th>
+                  <th>Order No</th>
+                  <th>Receiver</th>
+                  <th>Sender</th>
+                  <th>Country</th>
+                  <th>Items</th>
+                  <th>Value</th>
+                  <th>Weight</th>
+                  <th>Carrier</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="ordersBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <aside class="side">
+        <section class="panel side-section">
+          <div class="section-top">
+            <h3>Exporter</h3>
+            <button class="btn" id="resetExporterBtn" type="button">Reset</button>
+          </div>
+          <div class="form-grid">
+            <label>Company <input class="input" id="expCompany"></label>
+            <label>Contact <input class="input" id="expName"></label>
+            <label>Phone <input class="input" id="expPhone"></label>
+            <label>Email <input class="input" id="expEmail"></label>
+            <label>Address <input class="input" id="expAddress"></label>
+            <label>Postal Code <input class="input" id="expPostal"></label>
+            <label>FedEx Account <input class="input" id="fedexAccount" readonly></label>
+            <label>Korea Post Type
+              <select class="select" id="koreaPostType">
+                <option value="Gift">Gift</option>
+                <option value="Merchandise" selected>Merchandise</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel side-section">
+          <div class="section-top">
+            <h3>Generation</h3>
+            <span class="pill ready" id="readyPill">Ready</span>
+          </div>
+          <div class="summary-list">
+            <div class="summary-row"><span>Output bundle</span><strong id="bundleName">-</strong></div>
+            <div class="summary-row"><span>Files to create</span><strong id="fileCount">0</strong></div>
+            <div class="summary-row"><span>Validation issues</span><strong id="issueCount">0</strong></div>
+          </div>
+        </section>
+
+        <section class="panel side-section">
+          <div class="section-top">
+            <h3>Activity</h3>
+            <button class="btn" id="clearLogBtn" type="button">Clear</button>
+          </div>
+          <div class="log" id="log">Waiting for raw data...</div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const CARRIER_LABELS = {
+      FEDEX: "FEDEX",
+      DHL: "DHL",
+      KOREA_POST: "Korea Post",
+      ACI: "ACI"
+    };
+
+    const DEFAULT_EXPORTER = {
+      company: "",
+      name: "",
+      phone: "821082533536",
+      email: "scm@Hypercape.com",
+      address: "611-612, 26, Beotkkot-ro 24-gil, Geumcheon-gu, Seoul, Republic of Korea",
+      city: "Geumcheon-gu, Seoul",
+      postalCode: "08517",
+      country: "KR",
+      taxId: "1278701611"
+    };
+
+    const DHL_HEADERS = [
+      "Order Number", "Date", "To Name", "Destination Building", "Destination Street", "Destination Suburb",
+      "Destination City", "Destination Postcode", "Destination State", "Destination Country", "Destination Email",
+      "Destination Phone", "Item Name", "Item Price", "Instructions", "Weight", "Shipping Method", "Reference",
+      "SKU", "Qty", "Company", "Signature Required", "ATL", "Country Code", "Package Height", "Package Width",
+      "Package Length", "Carrier", "Carrier Product Code", "Carrier Product Unit Type", "Declared Value Currency",
+      "Code", "Color", "Size", "Contents", "Dangerous Goods", "Country of Manufacturer", "DDP", "ReceiverVAT",
+      "ReceiverEORI", "ShippingFreightValue", "Brand", "Usage", "Material", "Model", "MID Code",
+      "Receiver National ID", "Receiver Passport Number", "Receiver USCI", "Receiver CR", "Receiver Brazil CNP"
+    ];
+
+    const ACI_HEADERS = [
+      "주문번호", "주문날짜", "출발도시 코드", "도착국가", "PAYMENT", "송하인 명", "송하인 전화번호", "송하인 핸드폰 번호",
+      "송하인 우편주소", "송하인 주소", "송하인 상세주소", "송하인 세금식별코드", "송하인 세금식별번호", "수취인 명",
+      "수취인 연락처1", "수취인 연락처2", "수취인 우편주소", "수취인 도시", "수취인 주", "수취인 주소", "수취인 상세주소",
+      "수취인 Email", "개인 구별 번호", "수취인 세금식별코드", "수취인 세금식별번호", "수취인 Reference1", "수취인 요청사항",
+      "Box 수량", "무게", "부피무게", "무게단위", "길이", "폭", "높이", "측정 단위", "입고메모", "구매사이트", "사용 용도",
+      "화장품 포함 여부", "수출신고구분", "수출화주사업자상호명", "수출화주사업자대표명", "수출화주사업자번호",
+      "수출화주사업자주소", "수출화주사업자우편번호", "수출화주통관부호", "수출대행자상호명", "수출대행자사업장일련번호",
+      "수출대행자통관부호", "수출면장번호", "HS CODE", "상품 이름", "상품 단가", "상품 개수", "상품 무게", "브랜드",
+      "현지 택배회사", "현지 택배번호", "상품 URL", "상품 사진 URL", "제조국", "제조회사", "화폐 단위"
+    ];
+
+    const FEDEX_DEFAULT_FIELDS = [
+      ["32", (order) => getOrderShipper(order).name || "Hypercape"],
+      ["4", () => "Hypercape"],
+      ["5", () => "611-612"],
+      ["6", () => "26, Beotkkot-ro 24-gil"],
+      ["7", () => "Geumcheon-gu, Seoul"],
+      ["9", () => "08517"],
+      ["117", () => "KR"],
+      ["183", () => "821082533536"],
+      ["1201", () => "scm@Hypercape.com"],
+      ["75", () => "KGS"],
+      ["1116", () => "C"],
+      ["68", () => "USD"],
+      ["2397", () => "1"],
+      ["23", () => "1"],
+      ["20", () => DEFAULT_FEDEX_ACCOUNT_NUMBER],
+      ["70", () => "2"],
+      ["113", () => "Y"],
+      ["72", () => "8"],
+      ["190", () => "N"],
+      ["1553", () => "Y"],
+      ["2806", () => "Y"]
+    ];
+
+    const FEDEX_TRANS_FIELDS = [
+      "1", "25", "118", "12", "11", "13", "14", "2944", "15", "16", "50", "17", "18", "1277", "1202", "79",
+      "81", "82", "80", "1030", "2462", "3003", "418", "532", "414", "116", "2460", "59", "58", "57", "1274", "1273"
+    ];
+
+    const FEDEX_TRANS_MULTIPLIERS = [
+      "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "1000000", "100", "", "", "100",
+      "", "", "100", "", "", "", "", ""
+    ];
+
+    const FEDEX_GROUP_FIELDS = new Set([
+      "79", "80", "81", "82", "1030", "414", "50001", "50002", "50003", "50004", "50005", "50006",
+      "50501", "50502", "50503", "50504", "4129", "1504", "2462"
+    ]);
+
+    const FEDEX_CI_COMMENT = "The exporter of the products covered by this document declares that, except where otherwise clearly indicated, these products are of Republic of Korea preferential origin.";
+
+    const COUNTRY_TO_ISO = {
+      "united states": "US",
+      "usa": "US",
+      "us": "US",
+      "united kingdom": "GB",
+      "uk": "GB",
+      "great britain": "GB",
+      "korea": "KR",
+      "south korea": "KR",
+      "republic of korea": "KR",
+      "japan": "JP",
+      "canada": "CA",
+      "mexico": "MX",
+      "chile": "CL"
+    };
+    const FEDEX_COUNTRY_CODE_PATH = "country%20code.xlsx";
+
+    const US_STATE_TO_CODE = {
+      "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA", "colorado": "CO",
+      "connecticut": "CT", "delaware": "DE", "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+      "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS", "kentucky": "KY", "louisiana": "LA",
+      "maine": "ME", "maryland": "MD", "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+      "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV", "new hampshire": "NH", "new jersey": "NJ",
+      "new mexico": "NM", "new york": "NY", "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+      "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC", "south dakota": "SD",
+      "tennessee": "TN", "texas": "TX", "utah": "UT", "vermont": "VT", "virginia": "VA", "washington": "WA",
+      "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC"
+    };
+
+    const BOX_DIMENSIONS = {
+      C: { length: 15, width: 10, height: 7 },
+      N: { length: 28, width: 19, height: 13 },
+      B_03_1: { length: 20, width: 15, height: 7 },
+      B_04_3: { length: 20, width: 15, height: 10 },
+      B_14_2: { length: 30, width: 20, height: 10 },
+      G_13_2: { length: 30, width: 20, height: 12 }
+    };
+
+    const ACI_BOX_DIMENSIONS = {
+      C: { length: 15, width: 10, height: 10 },
+      N: { length: 28, width: 19, height: 19 }
+    };
+
+    const ACI_EXPORTER_DECLARATION = {
+      company: "하이퍼케이프",
+      representative: "홍승현",
+      businessNo: "1278701611",
+      address: "서울특별시 금천구 벚꽃로24길 26 611-612호",
+      postalCode: "08517",
+      customsCode: "하이퍼케1201013"
+    };
+    const ACI_TEMPLATE_PATH = "sample/aci%20sample_US.xlsx";
+    const DEFAULT_FEDEX_ACCOUNT_NUMBER = "790987152";
+    const ACCESS_PASSWORD = "hypercape";
+    const AUTH_STORAGE_KEY = "carrierFormatStudioAuthorizedV2";
+
+    let orders = [];
+    let activeFilter = "ALL";
+    let selectedOrderIds = new Set();
+    let activeOrderId = null;
+    let fedexCountryCodeMap = null;
+
+    const els = {
+      appRoot: document.getElementById("appRoot"),
+      authScreen: document.getElementById("authScreen"),
+      authForm: document.getElementById("authForm"),
+      passwordInput: document.getElementById("passwordInput"),
+      authError: document.getElementById("authError"),
+      rawFile: document.getElementById("rawFile"),
+      chooseBtn: document.getElementById("chooseBtn"),
+      sampleBtn: document.getElementById("sampleBtn"),
+      generateBtn: document.getElementById("generateBtn"),
+      deleteSelectedBtn: document.getElementById("deleteSelectedBtn"),
+      clearListBtn: document.getElementById("clearListBtn"),
+      selectAllOrders: document.getElementById("selectAllOrders"),
+      fileTitle: document.getElementById("fileTitle"),
+      fileHint: document.getElementById("fileHint"),
+      emptyState: document.getElementById("emptyState"),
+      ordersTable: document.getElementById("ordersTable"),
+      ordersBody: document.getElementById("ordersBody"),
+      log: document.getElementById("log"),
+      clearLogBtn: document.getElementById("clearLogBtn"),
+      resetExporterBtn: document.getElementById("resetExporterBtn"),
+      bundleName: document.getElementById("bundleName"),
+      fileCount: document.getElementById("fileCount"),
+      issueCount: document.getElementById("issueCount"),
+      readyPill: document.getElementById("readyPill"),
+      statOrders: document.getElementById("statOrders"),
+      statFedex: document.getElementById("statFedex"),
+      statDhl: document.getElementById("statDhl"),
+      statKoreaPost: document.getElementById("statKoreaPost"),
+      statAci: document.getElementById("statAci"),
+      expCompany: document.getElementById("expCompany"),
+      expName: document.getElementById("expName"),
+      expPhone: document.getElementById("expPhone"),
+      expEmail: document.getElementById("expEmail"),
+      expAddress: document.getElementById("expAddress"),
+      expPostal: document.getElementById("expPostal"),
+      fedexAccount: document.getElementById("fedexAccount"),
+      koreaPostType: document.getElementById("koreaPostType")
+    };
+
+    init();
+
+    function init() {
+      wireAuth();
+      if (!isAuthorized()) return;
+      unlockApp();
+      initApp();
+    }
+
+    function initApp() {
+      loadCarrierSettings();
+      ensureFedexCountryCodeMap();
+      loadExporterPanel(null);
+      wireEvents();
+      render();
+    }
+
+    function wireAuth() {
+      els.authForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (els.passwordInput.value === ACCESS_PASSWORD) {
+          sessionStorage.setItem(AUTH_STORAGE_KEY, "1");
+          unlockApp();
+          initApp();
+          return;
+        }
+        els.authError.textContent = "Password is incorrect.";
+        els.passwordInput.value = "";
+        els.passwordInput.focus();
+      });
+    }
+
+    function isAuthorized() {
+      return sessionStorage.getItem(AUTH_STORAGE_KEY) === "1";
+    }
+
+    function unlockApp() {
+      els.authScreen.hidden = true;
+      els.appRoot.hidden = false;
+    }
+
+    function wireEvents() {
+      els.chooseBtn.addEventListener("click", () => els.rawFile.click());
+      els.rawFile.addEventListener("change", handleFileUpload);
+      els.sampleBtn.addEventListener("click", loadDemoData);
+      els.generateBtn.addEventListener("click", generateBundle);
+      els.deleteSelectedBtn.addEventListener("click", deleteSelectedOrders);
+      els.clearListBtn.addEventListener("click", clearOrderList);
+      els.selectAllOrders.addEventListener("change", toggleSelectAllVisible);
+      els.clearLogBtn.addEventListener("click", () => setLog("Log cleared."));
+      els.resetExporterBtn.addEventListener("click", () => {
+        const order = getActiveOrder();
+        if (!order) return;
+        order.shipper = createDefaultShipper();
+        order.koreaPostType = "Merchandise";
+        loadExporterPanel(order);
+        appendLog(`Exporter reset for order ${order.orderId}.`);
+      });
+      document.querySelectorAll("#carrierTabs .tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          activeFilter = tab.dataset.filter;
+          document.querySelectorAll("#carrierTabs .tab").forEach((t) => t.classList.toggle("active", t === tab));
+          renderTable();
+        });
+      });
+      [els.expCompany, els.expName, els.expPhone, els.expEmail, els.expAddress, els.expPostal].forEach((input) => {
+        input.addEventListener("input", saveExporterPanelToActiveOrder);
+      });
+      els.fedexAccount.addEventListener("input", saveFedexAccountNumber);
+      els.koreaPostType.addEventListener("change", saveExporterPanelToActiveOrder);
+    }
+
+    function loadCarrierSettings() {
+      els.fedexAccount.value = DEFAULT_FEDEX_ACCOUNT_NUMBER;
+    }
+
+    function saveFedexAccountNumber() {
+      localStorage.setItem("fedexAccountNumber", els.fedexAccount.value.trim());
+    }
+
+    function getFedexAccountNumber() {
+      return DEFAULT_FEDEX_ACCOUNT_NUMBER;
+    }
+
+    async function ensureFedexCountryCodeMap() {
+      if (fedexCountryCodeMap) return fedexCountryCodeMap;
+      if (!window.XLSX) return new Map();
+      try {
+        const response = await fetch(FEDEX_COUNTRY_CODE_PATH);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        fedexCountryCodeMap = new Map();
+        rows.forEach((row) => {
+          const name = normalizeCountryNameKey(row[0]);
+          const code = String(row[1] || "").trim().toUpperCase();
+          if (name && /^[A-Z]{2}$/.test(code)) fedexCountryCodeMap.set(name, code);
+        });
+        appendLog(`FedEx country code map loaded: ${fedexCountryCodeMap.size} countries.`);
+      } catch (error) {
+        fedexCountryCodeMap = new Map();
+        appendLog(`FedEx country code map fallback used: ${error.message}`);
+      }
+      return fedexCountryCodeMap;
+    }
+
+    function createDefaultShipper() {
+      return {
+        company: "",
+        name: "",
+        phone: DEFAULT_EXPORTER.phone,
+        email: DEFAULT_EXPORTER.email,
+        address: DEFAULT_EXPORTER.address,
+        city: DEFAULT_EXPORTER.city,
+        postalCode: DEFAULT_EXPORTER.postalCode,
+        country: "KR",
+        taxId: DEFAULT_EXPORTER.taxId
+      };
+    }
+
+    function loadExporterPanel(order) {
+      const shipper = order && order.shipper ? order.shipper : createDefaultShipper();
+      els.expCompany.value = shipper.company || "";
+      els.expName.value = shipper.name || "";
+      els.expPhone.value = shipper.phone || "";
+      els.expEmail.value = shipper.email || "";
+      els.expAddress.value = shipper.address || "";
+      els.expPostal.value = shipper.postalCode || "";
+      els.koreaPostType.value = order && order.koreaPostType ? order.koreaPostType : "Merchandise";
+    }
+
+    function readExporterPanel() {
+      return {
+        company: els.expCompany.value.trim(),
+        name: els.expName.value.trim(),
+        phone: els.expPhone.value.trim(),
+        email: els.expEmail.value.trim(),
+        address: els.expAddress.value.trim(),
+        city: DEFAULT_EXPORTER.city,
+        postalCode: els.expPostal.value.trim(),
+        country: "KR",
+        taxId: DEFAULT_EXPORTER.taxId
+      };
+    }
+
+    function saveExporterPanelToActiveOrder() {
+      const order = getActiveOrder();
+      if (!order) return;
+      order.shipper = readExporterPanel();
+      order.koreaPostType = els.koreaPostType.value || "Merchandise";
+      renderTable();
+    }
+
+    function getActiveOrder() {
+      return orders.find((order) => order.orderId === activeOrderId) || null;
+    }
+
+    function setActiveOrder(orderId) {
+      activeOrderId = orderId;
+      loadExporterPanel(getActiveOrder());
+      renderTable();
+    }
+
+    async function handleFileUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (!window.XLSX) {
+        alert("SheetJS library failed to load. Check the network connection and reload.");
+        return;
+      }
+      try {
+        await ensureFedexCountryCodeMap();
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        orders = parseRawWorkbook(workbook);
+        selectedOrderIds.clear();
+        activeOrderId = orders[0] ? orders[0].orderId : null;
+        loadExporterPanel(getActiveOrder());
+        els.fileTitle.textContent = file.name;
+        els.fileHint.textContent = `${orders.length} grouped orders loaded`;
+        appendLog(`Loaded ${file.name}: ${orders.length} orders grouped.`);
+        render();
+      } catch (error) {
+        console.error(error);
+        alert(`Failed to parse file: ${error.message}`);
+        appendLog(`Parse error: ${error.message}`);
+      } finally {
+        event.target.value = "";
+      }
+    }
+
+    async function loadDemoData() {
+      try {
+        if (!window.XLSX) {
+          throw new Error("SheetJS library is not available.");
+        }
+        await ensureFedexCountryCodeMap();
+        const response = await fetch("sample/raw data sample.xlsx");
+        if (!response.ok) throw new Error("sample/raw data sample.xlsx not found");
+        const buffer = await response.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        orders = parseRawWorkbook(workbook);
+        selectedOrderIds.clear();
+        activeOrderId = orders[0] ? orders[0].orderId : null;
+        loadExporterPanel(getActiveOrder());
+        els.fileTitle.textContent = "raw data sample.xlsx";
+        els.fileHint.textContent = `${orders.length} grouped demo orders loaded`;
+        appendLog(`Demo loaded: ${orders.length} orders.`);
+        render();
+      } catch (error) {
+        appendLog(`Demo load failed: ${error.message}`);
+        alert(error.message);
+      }
+    }
+
+    function parseRawWorkbook(workbook) {
+      const sheetName = workbook.SheetNames.includes("Products") ? "Products" : workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+      if (!rows.length) return [];
+      const headers = rows[0].map((h) => String(h || "").trim());
+      const idx = makeHeaderIndex(headers);
+      const grouped = new Map();
+
+      rows.slice(1).forEach((row) => {
+        const orderId = cell(row, idx.orderId) || cell(row, idx.orderNo);
+        if (!orderId) return;
+        const orderNo = cell(row, idx.orderNo) || orderId;
+        if (!grouped.has(orderId)) {
+          const country = normalizeCountry(cell(row, idx.country));
+          const boxType = cell(row, idx.boxType).toUpperCase();
+          const dims = BOX_DIMENSIONS[boxType] || { length: 20, width: 20, height: 10 };
+          const rawWeight = number(cell(row, idx.weight), 0.5);
+          const weightKg = rawWeight >= 10 ? rawWeight / 1000 : rawWeight;
+          grouped.set(orderId, {
+            orderId,
+            orderNo,
+            selectedCarrier: suggestCarrier(cell(row, idx.shipVia)),
+            receiver: {
+              name: cell(row, idx.name),
+              phone: cleanPhone(cell(row, idx.phone)),
+              email: cell(row, idx.email),
+              country,
+              state: normalizeState(cell(row, idx.state), country),
+              city: cell(row, idx.city),
+              postalCode: cell(row, idx.zip),
+              address1: cell(row, idx.address1),
+              address2: cell(row, idx.address2),
+              taxId: cell(row, idx.taxId)
+            },
+            package: {
+              weightKg: weightKg > 0 ? weightKg : 0.5,
+              length: dims.length,
+              width: dims.width,
+              height: dims.height,
+              boxType
+            },
+            shipper: createDefaultShipper(),
+            koreaPostType: "Merchandise",
+            items: []
+          });
+        }
+        grouped.get(orderId).items.push({
+          description: cell(row, idx.product) || "Cosmetics",
+          quantity: Math.max(1, parseInt(cell(row, idx.quantity), 10) || 1),
+          price: Math.max(0.01, number(cell(row, idx.price), 1)),
+          hsCode: "330499",
+          originCountry: "KR"
+        });
+      });
+
+      return Array.from(grouped.values());
+    }
+
+    function makeHeaderIndex(headers) {
+      const normalized = headers.map(normalizeHeader);
+      const find = (names, fallback) => {
+        const targets = names.map(normalizeHeader);
+        const found = normalized.findIndex((h) => targets.includes(h));
+        return found >= 0 ? found : fallback;
+      };
+      return {
+        orderId: find(["Order id", "Order ID"], 0),
+        orderNo: find(["Order no", "Order Number", "Order"], 1),
+        product: find(["Product Name(상품명)", "Product Name", "Item Name"], 6),
+        price: find(["Sale price", "Price", "Item Price"], 7),
+        quantity: find(["Quantity", "Qty"], 8),
+        shipVia: find(["Ship via", "Shipping Method"], 9),
+        name: find(["Receiver name", "Name", "To Name"], 10),
+        phone: find(["Phone no", "Phone", "Destination Phone"], 11),
+        country: find(["Country", "Destination Country"], 12),
+        state: find(["Province", "State", "Destination State"], 13),
+        city: find(["City", "Destination City"], 14),
+        address1: find(["Address1", "Destination Street"], 15),
+        address2: find(["Address2", "Destination Building"], 16),
+        zip: find(["Zip", "Zipcode", "Postal Code", "Destination Postcode"], 17),
+        email: find(["Seller E-mail", "Email", "Destination Email"], 18),
+        taxId: find(["Tax ID", "TaxId"], 19),
+        weight: find(["Total Weight", "Weight"], 20),
+        boxType: find(["Recommended Box Type", "Box Type"], 21)
+      };
+    }
+
+    function render() {
+      syncSelectedOrders();
+      syncActiveOrder();
+      renderStats();
+      renderTable();
+      updateGenerationSummary();
+      els.generateBtn.disabled = orders.length === 0;
+      els.clearListBtn.disabled = orders.length === 0;
+      els.deleteSelectedBtn.disabled = selectedOrderIds.size === 0;
+    }
+
+    function renderStats() {
+      const counts = countByCarrier();
+      els.statOrders.textContent = orders.length;
+      els.statFedex.textContent = counts.FEDEX || 0;
+      els.statDhl.textContent = counts.DHL || 0;
+      els.statKoreaPost.textContent = counts.KOREA_POST || 0;
+      els.statAci.textContent = counts.ACI || 0;
+    }
+
+    function renderTable() {
+      const visible = getVisibleOrders();
+      els.emptyState.hidden = orders.length > 0;
+      els.ordersTable.hidden = orders.length === 0;
+      els.ordersBody.innerHTML = "";
+
+      visible.forEach((order) => {
+        const tr = document.createElement("tr");
+        tr.dataset.orderId = order.orderId;
+        tr.className = order.orderId === activeOrderId ? "active-row" : "";
+        const issue = validateOrder(order);
+        const shipper = getOrderShipper(order);
+        tr.innerHTML = `
+          <td><input class="row-check order-check" type="checkbox" data-order-id="${escapeHtml(order.orderId)}" ${selectedOrderIds.has(order.orderId) ? "checked" : ""} aria-label="Select order ${escapeHtml(order.orderId)}"></td>
+          <td><span class="order-id">${escapeHtml(order.orderId)}</span></td>
+          <td class="muted">${escapeHtml(order.orderNo)}</td>
+          <td>${escapeHtml(order.receiver.name)}</td>
+          <td><input class="cell-input sender-input" data-order-id="${escapeHtml(order.orderId)}" value="${escapeHtml(shipper.name || "")}" aria-label="Sender contact for ${escapeHtml(order.orderId)}"></td>
+          <td><input class="cell-input country-input" data-order-id="${escapeHtml(order.orderId)}" value="${escapeHtml(order.receiver.country || "")}" aria-label="Country for ${escapeHtml(order.orderId)}"></td>
+          <td>${order.items.length}</td>
+          <td>$${order.items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</td>
+          <td><input class="cell-input weight-input" type="number" min="0.01" step="0.01" data-order-id="${escapeHtml(order.orderId)}" value="${order.package.weightKg.toFixed(2)}" aria-label="Weight kg for ${escapeHtml(order.orderId)}"></td>
+          <td>
+            <select class="carrier-select" data-order-id="${escapeHtml(order.orderId)}">
+              ${Object.entries(CARRIER_LABELS).map(([value, label]) => `<option value="${value}" ${order.selectedCarrier === value ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+          </td>
+          <td><span class="pill ${issue ? "warn" : "ready"}">${issue ? "Check" : "Ready"}</span></td>
+        `;
+        els.ordersBody.appendChild(tr);
+      });
+
+      els.ordersBody.querySelectorAll("tr[data-order-id]").forEach((row) => {
+        row.addEventListener("click", () => setActiveOrder(row.dataset.orderId));
+      });
+
+      els.ordersBody.querySelectorAll(".carrier-select").forEach((select) => {
+        select.addEventListener("click", (event) => event.stopPropagation());
+        select.addEventListener("change", () => {
+          const order = orders.find((o) => o.orderId === select.dataset.orderId);
+          if (order) order.selectedCarrier = select.value;
+          render();
+        });
+      });
+
+      els.ordersBody.querySelectorAll(".sender-input").forEach((input) => {
+        input.addEventListener("click", (event) => event.stopPropagation());
+        input.addEventListener("input", () => {
+          const order = orders.find((o) => o.orderId === input.dataset.orderId);
+          if (!order) return;
+          order.shipper = order.shipper || createDefaultShipper();
+          order.shipper.name = input.value.trim();
+          if (order.orderId === activeOrderId) loadExporterPanel(order);
+        });
+      });
+
+      els.ordersBody.querySelectorAll(".country-input").forEach((input) => {
+        input.addEventListener("click", (event) => event.stopPropagation());
+        input.addEventListener("change", async () => {
+          await ensureFedexCountryCodeMap();
+          const order = orders.find((o) => o.orderId === input.dataset.orderId);
+          if (!order) return;
+          order.receiver.country = normalizeCountry(input.value);
+          render();
+        });
+      });
+
+      els.ordersBody.querySelectorAll(".weight-input").forEach((input) => {
+        input.addEventListener("click", (event) => event.stopPropagation());
+        input.addEventListener("change", () => {
+          const order = orders.find((o) => o.orderId === input.dataset.orderId);
+          if (!order) return;
+          order.package.weightKg = Math.max(0.01, number(input.value, order.package.weightKg || 0.5));
+          render();
+        });
+      });
+
+      els.ordersBody.querySelectorAll(".order-check").forEach((checkbox) => {
+        checkbox.addEventListener("click", (event) => event.stopPropagation());
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) selectedOrderIds.add(checkbox.dataset.orderId);
+          else selectedOrderIds.delete(checkbox.dataset.orderId);
+          render();
+        });
+      });
+
+      updateSelectAllState(visible);
+    }
+
+    function updateGenerationSummary() {
+      const issues = orders.filter(validateOrder).length;
+      const fileCount = Object.values(countByCarrier()).filter((count) => count > 0).length;
+      els.bundleName.textContent = orders.length ? `Carrier_Bundle_${today()}.zip` : "-";
+      els.fileCount.textContent = fileCount;
+      els.issueCount.textContent = issues;
+      els.readyPill.textContent = issues ? "Review" : "Ready";
+      els.readyPill.className = `pill ${issues ? "warn" : "ready"}`;
+    }
+
+    function clearOrderList() {
+      if (!orders.length) return;
+      if (!confirm(`Clear all ${orders.length} loaded orders?`)) return;
+      orders = [];
+      selectedOrderIds.clear();
+      activeOrderId = null;
+      loadExporterPanel(null);
+      activeFilter = "ALL";
+      document.querySelectorAll("#carrierTabs .tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.filter === "ALL"));
+      els.fileTitle.textContent = "Upload raw data spreadsheet";
+      els.fileHint.textContent = "Accepts .xlsx, .xls, .csv. Orders are grouped by Order id.";
+      appendLog("Order list cleared.");
+      render();
+    }
+
+    function deleteSelectedOrders() {
+      if (!selectedOrderIds.size) return;
+      if (!confirm(`Delete ${selectedOrderIds.size} selected order(s)?`)) return;
+      const before = orders.length;
+      orders = orders.filter((order) => !selectedOrderIds.has(order.orderId));
+      const deleted = before - orders.length;
+      selectedOrderIds.clear();
+      if (!orders.some((order) => order.orderId === activeOrderId)) {
+        activeOrderId = orders[0] ? orders[0].orderId : null;
+        loadExporterPanel(getActiveOrder());
+      }
+      appendLog(`Deleted ${deleted} selected order(s).`);
+      render();
+    }
+
+    function toggleSelectAllVisible() {
+      const visible = getVisibleOrders();
+      if (els.selectAllOrders.checked) {
+        visible.forEach((order) => selectedOrderIds.add(order.orderId));
+      } else {
+        visible.forEach((order) => selectedOrderIds.delete(order.orderId));
+      }
+      render();
+    }
+
+    function updateSelectAllState(visible) {
+      if (!visible.length) {
+        els.selectAllOrders.checked = false;
+        els.selectAllOrders.indeterminate = false;
+        els.selectAllOrders.disabled = true;
+        return;
+      }
+      const selectedVisible = visible.filter((order) => selectedOrderIds.has(order.orderId)).length;
+      els.selectAllOrders.disabled = false;
+      els.selectAllOrders.checked = selectedVisible === visible.length;
+      els.selectAllOrders.indeterminate = selectedVisible > 0 && selectedVisible < visible.length;
+    }
+
+    function syncSelectedOrders() {
+      const existing = new Set(orders.map((order) => order.orderId));
+      selectedOrderIds = new Set([...selectedOrderIds].filter((orderId) => existing.has(orderId)));
+    }
+
+    function syncActiveOrder() {
+      if (!orders.length) {
+        activeOrderId = null;
+        return;
+      }
+      if (!orders.some((order) => order.orderId === activeOrderId)) {
+        activeOrderId = orders[0].orderId;
+        loadExporterPanel(getActiveOrder());
+      }
+    }
+
+    function getVisibleOrders() {
+      return activeFilter === "ALL" ? orders : orders.filter((order) => order.selectedCarrier === activeFilter);
+    }
+
+    function getOrderShipper(order) {
+      return order && order.shipper ? order.shipper : createDefaultShipper();
+    }
+
+    async function generateBundle() {
+      if (!orders.length) return;
+      if (!window.XLSX || !window.JSZip) {
+        alert("Required libraries failed to load. Check the network connection and reload.");
+        return;
+      }
+      await ensureFedexCountryCodeMap();
+      const issues = orders.map((order) => ({ order, issue: validateOrder(order) })).filter((x) => x.issue);
+      if (issues.length) {
+        const message = issues.slice(0, 5).map((x) => `${x.order.orderId}: ${x.issue}`).join("\n");
+        if (!confirm(`There are ${issues.length} validation issues.\n\n${message}\n\nContinue anyway?`)) return;
+      }
+
+      const zip = new JSZip();
+      const groups = groupBy(orders, (order) => order.selectedCarrier);
+
+      if (groups.DHL && groups.DHL.length) {
+        zip.file(`DHL_${today()}.csv`, generateDhlCsv(groups.DHL), { binary: false });
+      }
+      if (groups.KOREA_POST && groups.KOREA_POST.length) {
+        const wb = generateKoreaPostWorkbook(groups.KOREA_POST);
+        zip.file(`KoreaPost_Bulk_${today()}.xlsx`, workbookToArrayBuffer(wb));
+      }
+      if (groups.ACI && groups.ACI.length) {
+        const wb = await generateAciWorkbook(groups.ACI);
+        zip.file(`ACI_US_${today()}.xlsx`, workbookToArrayBuffer(wb));
+      }
+      if (groups.FEDEX && groups.FEDEX.length) {
+        zip.file(`FEDEX_${today()}.in`, generateFedexIn(groups.FEDEX), { binary: false });
+      }
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(blob, `Carrier_Bundle_${today()}.zip`);
+      appendLog(`Generated bundle with ${Object.keys(groups).length} carrier group(s).`);
+    }
+
+    function generateDhlCsv(carrierOrders) {
+      const rows = [DHL_HEADERS];
+      carrierOrders.forEach((order) => {
+        order.items.forEach((item) => {
+          const r = order.receiver;
+          const p = order.package;
+          rows.push([
+            order.orderId, "", r.name, r.address2, r.address1, "", r.city, r.postalCode, r.state,
+            countryNameFromIso(r.country), r.email, r.phone, item.description, item.price, "",
+            p.weightKg.toFixed(2), "", order.orderNo, "", item.quantity, "", "", "", r.country,
+            p.height, p.width, p.length, "DHL", "", "", "USD", "", "", "", "Cosmetics", "N",
+            item.originCountry, "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+          ]);
+        });
+      });
+      return "\ufeff" + rows.map(csvLine).join("\n");
+    }
+
+    function generateKoreaPostWorkbook(carrierOrders) {
+      const headerRow2 = ["상품구분", "수취인명", "수취인EMAIL", "", "", "", "", "수취인전화", "수취인국가", "", "수취인우편번호", "수취인 상세주소", "수취인 city", "수취인 state", "", "박스포장 실중량(g)", "내용품명", "개수", "순중량(g)", "가격", "통화단위", "HSCODE", "생산지", "", "보험가입여부", "", "EMS구분", "물품종류", "고객주문번호"];
+      while (headerRow2.length < 65) headerRow2.push("");
+      const rows = [["우체국 대량등록 양식"], headerRow2, blankRow(65), blankRow(65), blankRow(65)];
+      carrierOrders.forEach((order) => rows.push(buildKoreaPostRow(order, order.koreaPostType || "Merchandise")));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "우체국등록");
+      return wb;
+    }
+
+    function buildKoreaPostRow(order, productType) {
+      const r = order.receiver;
+      const p = order.package;
+      const items = order.items.length ? order.items : [{ description: "Cosmetics", quantity: 1, price: 1 }];
+      const country = String(r.country || "").toUpperCase();
+      const isClMx = country === "CL" || country === "MX";
+      const row = blankRow(65);
+      row[0] = productType;
+      row[1] = cut(r.name, 35);
+      row[2] = r.email || "";
+      row[7] = r.phone || "";
+      row[8] = country;
+      row[10] = r.postalCode || "";
+      row[11] = cut([r.address1, r.address2].filter(Boolean).join(", "), 200);
+      row[12] = r.city || "";
+      row[13] = r.state || "";
+      row[15] = Math.round((p.weightKg || 0.5) * 1000);
+      row[16] = items.map((item) => item.description || "Cosmetics").join(";");
+      row[17] = items.map((item) => item.quantity || 1).join(";");
+      row[18] = items.map(() => "30").join(";");
+      row[19] = items.map((item) => number(item.price, 1)).join(";");
+      row[20] = "USD";
+      row[21] = items.map(() => "3304991000").join(";");
+      row[22] = items.map(() => "KR").join(";");
+      row[24] = "N";
+      row[26] = isClMx ? "R" : "K";
+      row[27] = isClMx ? "re" : "rl";
+      row[28] = order.orderNo || order.orderId;
+      row[42] = "Y";
+      row[43] = DEFAULT_EXPORTER.taxId;
+      row[44] = "";
+      row[45] = `${DEFAULT_EXPORTER.address}, ${DEFAULT_EXPORTER.postalCode}`;
+      row[46] = "N";
+      row[62] = Math.round(p.length || 20);
+      row[63] = Math.round(p.width || 20);
+      row[64] = Math.round(p.height || 10);
+      return row;
+    }
+
+    async function generateAciWorkbook(carrierOrders) {
+      const rows = [ACI_HEADERS];
+      carrierOrders.forEach((order) => {
+        const items = order.items.length ? order.items : [{ description: "Cosmetics", quantity: 1, price: 1 }];
+        items.forEach((item, index) => rows.push(buildAciRow(order, item, index === 0)));
+      });
+      const wb = await loadAciTemplateWorkbook();
+      wb.Sheets.Form = XLSX.utils.aoa_to_sheet(rows);
+      if (!wb.SheetNames.includes("Form")) wb.SheetNames.unshift("Form");
+      return wb;
+    }
+
+    function buildAciRow(order, item, includeOrderFields) {
+      const row = blankRow(ACI_HEADERS.length);
+      const r = order.receiver;
+      const p = order.package;
+      const dims = getAciDimensions(p.boxType);
+
+      if (includeOrderFields) {
+        row[0] = order.orderId;
+        row[2] = "082";
+        row[3] = r.country === "US" ? "USA" : r.country;
+        row[4] = "DDP";
+        row[13] = r.name;
+        row[14] = normalizeAciPhone(r.phone);
+        row[15] = normalizeAciPhone(r.phone);
+        row[16] = normalizeAciPostalCode(r.postalCode);
+        row[17] = r.city;
+        row[18] = r.state;
+        row[19] = r.address1;
+        row[20] = r.address2;
+        row[21] = r.email;
+        row[27] = 1;
+        row[28] = formatAciNumber(p.weightKg);
+        row[30] = "KG";
+        row[31] = dims.length;
+        row[32] = dims.width;
+        row[33] = dims.height;
+        row[34] = "cm";
+        row[38] = "Y";
+        row[39] = "E";
+        row[40] = ACI_EXPORTER_DECLARATION.company;
+        row[41] = ACI_EXPORTER_DECLARATION.representative;
+        row[42] = ACI_EXPORTER_DECLARATION.businessNo;
+        row[43] = ACI_EXPORTER_DECLARATION.address;
+        row[44] = ACI_EXPORTER_DECLARATION.postalCode;
+        row[45] = ACI_EXPORTER_DECLARATION.customsCode;
+      }
+
+      row[50] = "3304991000";
+      row[51] = item.description || "Cosmetics";
+      row[52] = formatAciNumber(item.price || 1);
+      row[53] = item.quantity || 1;
+      row[54] = 0.03;
+      row[62] = "USD";
+      return row;
+    }
+
+    function generateFedexIn(carrierOrders) {
+      const lines = [];
+      const transRows = carrierOrders.flatMap((order) => buildFedexTransRows(order));
+      let commodityCount = 1;
+
+      transRows.forEach((row, rowIndex) => {
+        const currentId = stringValue(row[0]);
+        const previousId = rowIndex > 0 ? stringValue(transRows[rowIndex - 1][0]) : "";
+        const nextId = rowIndex < transRows.length - 1 ? stringValue(transRows[rowIndex + 1][0]) : "";
+
+        if (currentId && currentId !== previousId) {
+          commodityCount = 1;
+          lines.push(`0,${quoteCsv("020")}`);
+          FEDEX_DEFAULT_FIELDS.forEach(([field, resolver]) => {
+            const value = resolver(row.__order);
+            if (hasValue(value)) lines.push(`${field},${quoteCsv(value)}`);
+          });
+          FEDEX_TRANS_FIELDS.forEach((field, index) => {
+            const value = row[index];
+            if (hasValue(field) && hasValue(value)) {
+              lines.push(`${field},${quoteCsv(applyFedexMultiplier(value, FEDEX_TRANS_MULTIPLIERS[index]))}`);
+            }
+          });
+        } else if (currentId && currentId === previousId) {
+          commodityCount += 1;
+          FEDEX_TRANS_FIELDS.forEach((field, index) => {
+            const value = row[index];
+            if (!FEDEX_GROUP_FIELDS.has(String(field))) return;
+            if (hasValue(value)) {
+              lines.push(`${field}-${commodityCount},${quoteCsv(applyFedexMultiplier(value, FEDEX_TRANS_MULTIPLIERS[index]))}`);
+            }
+          });
+        }
+
+        if (currentId && currentId !== nextId) {
+          lines.push(`99,${quoteCsv("")}`);
+        }
+      });
+      return lines.join("\r\n") + "\r\n";
+    }
+
+    function buildFedexTransRows(order) {
+      const r = order.receiver;
+      const p = order.package;
+      const items = order.items.length ? order.items : [{ description: "Cosmetics", quantity: 1, price: 1 }];
+      return items.map((item) => {
+        const row = [
+          order.orderId,
+          order.orderId,
+          "",
+          cut(r.name, 35),
+          "",
+          cut(r.address1, 35),
+          cut(r.address2, 35),
+          "",
+          cut(r.city, 35),
+          r.state || "",
+          r.country,
+          r.postalCode,
+          r.phone || "",
+          "",
+          "",
+          cut(item.description || "Cosmetics", 148),
+          item.hsCode || "330499",
+          String(item.quantity || 1),
+          item.originCountry || "KR",
+          formatFixed(number(item.price, 1), 2),
+          "0.1",
+          order.orderId,
+          FEDEX_CI_COMMENT,
+          "",
+          "PCS",
+          "1",
+          formatFixed(Math.max(0.1, p.weightKg || 0.5), 2),
+          String(Math.round(p.length || 20)),
+          String(Math.round(p.width || 20)),
+          String(Math.round(p.height || 10)),
+          "EC",
+          "1"
+        ];
+        row.__order = order;
+        return row;
+      });
+    }
+
+    function applyFedexMultiplier(value, multiplier) {
+      if (!hasValue(multiplier) || !isNumericLike(value)) return value;
+      const result = number(value, 0) * number(multiplier, 1);
+      return formatMultiplierResult(result);
+    }
+
+    function formatMultiplierResult(value) {
+      if (!Number.isFinite(value)) return "";
+      return Number.isInteger(value) ? String(value) : String(value).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    async function loadAciTemplateWorkbook() {
+      try {
+        const response = await fetch(ACI_TEMPLATE_PATH);
+        if (!response.ok) throw new Error(`ACI template HTTP ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        return XLSX.read(buffer, { type: "array" });
+      } catch (error) {
+        appendLog(`ACI template fallback used: ${error.message}`);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["NATION NAME", "NATION ENG_NAME"], ["미국", "United States"]]), "국가명_영문명");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["분류", "컬럼명", "Type", "비고"], ["Generated", "Form", "Auto", "Created by Carrier Format Studio"]]), "참고사항");
+        return wb;
+      }
+    }
+
+    function workbookToArrayBuffer(workbook) {
+      return XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    }
+
+    function validateOrder(order) {
+      const r = order.receiver;
+      if (!r.name) return "Missing receiver";
+      if (!r.country || r.country.length !== 2) return "Country code";
+      if (!r.address1) return "Missing address";
+      if (!r.city) return "Missing city";
+      if (!order.items.length) return "No items";
+      if (["US", "CA", "IN", "MX"].includes(r.country) && !r.state) return "State required";
+      return "";
+    }
+
+    function suggestCarrier(shipVia) {
+      const value = String(shipVia || "").toUpperCase();
+      if (value.includes("K-PACKET") || value.includes("KOREA POST") || value.includes("우체국")) return "KOREA_POST";
+      if (value.includes("ACI")) return "ACI";
+      if (value.includes("FEDEX")) return "FEDEX";
+      if (value.includes("DHL")) return "DHL";
+      return "DHL";
+    }
+
+    function normalizeCountry(value) {
+      const raw = String(value || "").trim();
+      if (/^[A-Za-z]{2}$/.test(raw)) return raw.toUpperCase();
+      const mapped = fedexCountryCodeMap && fedexCountryCodeMap.get(normalizeCountryNameKey(raw));
+      return mapped || COUNTRY_TO_ISO[raw.toLowerCase()] || raw.slice(0, 2).toUpperCase();
+    }
+
+    function normalizeCountryNameKey(value) {
+      return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, " ");
+    }
+
+    function normalizeState(value, country) {
+      const raw = String(value || "").trim();
+      if (raw.length === 2) return raw.toUpperCase();
+      if (country === "US") return US_STATE_TO_CODE[raw.toLowerCase()] || raw;
+      return raw;
+    }
+
+    function normalizeHeader(value) {
+      return String(value || "").toLowerCase().replace(/[\s_\-\/().]+/g, "");
+    }
+
+    function countByCarrier() {
+      return orders.reduce((acc, order) => {
+        acc[order.selectedCarrier] = (acc[order.selectedCarrier] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function groupBy(list, fn) {
+      return list.reduce((acc, item) => {
+        const key = fn(item);
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+    }
+
+    function cell(row, index) {
+      return index >= 0 ? String(row[index] ?? "").trim() : "";
+    }
+
+    function number(value, fallback) {
+      const parsed = parseFloat(String(value ?? "").replace(/,/g, ""));
+      return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function hasValue(value) {
+      return String(value ?? "").trim() !== "";
+    }
+
+    function stringValue(value) {
+      return String(value ?? "").trim();
+    }
+
+    function isNumericLike(value) {
+      const text = String(value ?? "").trim();
+      if (!text) return false;
+      return Number.isFinite(Number(text.replace(/,/g, "")));
+    }
+
+    function formatFixed(value, digits) {
+      return Number(value || 0).toFixed(digits);
+    }
+
+    function cleanPhone(value) {
+      return String(value || "").replace(/[^0-9+]/g, "");
+    }
+
+    function cut(value, max) {
+      return String(value || "").slice(0, max);
+    }
+
+    function countryNameFromIso(iso) {
+      const map = { US: "United States", GB: "United Kingdom", KR: "South Korea", JP: "Japan", CA: "Canada", MX: "Mexico", CL: "Chile" };
+      return map[iso] || iso;
+    }
+
+    function getAciDimensions(boxType) {
+      return ACI_BOX_DIMENSIONS[String(boxType || "").toUpperCase()] || { length: 20, width: 20, height: 10 };
+    }
+
+    function normalizeAciPhone(value) {
+      return String(value || "").replace(/[^0-9]/g, "");
+    }
+
+    function normalizeAciPostalCode(value) {
+      const text = String(value || "").trim();
+      return /^[0-9]+$/.test(text) ? String(parseInt(text, 10)) : text;
+    }
+
+    function formatAciNumber(value) {
+      const numeric = number(value, 0);
+      return Number.isInteger(numeric) ? numeric : Number(String(numeric.toFixed(2)).replace(/0+$/, "").replace(/\.$/, ""));
+    }
+
+    function blankRow(length) {
+      return Array.from({ length }, () => "");
+    }
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function csvLine(row) {
+      return row.map(quoteCsv).join(",");
+    }
+
+    function quoteCsv(value) {
+      return `"${String(value ?? "").replace(/"/g, '""')}"`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function setLog(message) {
+      els.log.textContent = message;
+    }
+
+    function appendLog(message) {
+      const time = new Date().toLocaleTimeString();
+      const current = els.log.textContent === "Waiting for raw data..." ? "" : els.log.textContent + "\n";
+      els.log.textContent = `${current}[${time}] ${message}`;
+    }
+  </script>
+</body>
+</html>
