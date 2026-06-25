@@ -867,6 +867,7 @@
       customsCode: "하이퍼케1201013"
     };
     const ACI_TEMPLATE_PATH = "sample/aci%20sample_US.xlsx";
+    const KOREA_POST_TEMPLATE_PATH = "sample/korea%20post%20sample.xlsx";
     const DEFAULT_FEDEX_ACCOUNT_NUMBER = "790987152";
     const ACCESS_PASSWORD = "hypercape";
     const AUTH_STORAGE_KEY = "carrierFormatStudioAuthorizedV2";
@@ -1438,7 +1439,7 @@
         zip.file(`DHL_${today()}.csv`, generateDhlCsv(groups.DHL), { binary: false });
       }
       if (groups.KOREA_POST && groups.KOREA_POST.length) {
-        const wb = generateKoreaPostWorkbook(groups.KOREA_POST);
+        const wb = await generateKoreaPostWorkbook(groups.KOREA_POST);
         zip.file(`KoreaPost_Bulk_${today()}.xlsx`, workbookToArrayBuffer(wb));
       }
       if (groups.ACI && groups.ACI.length) {
@@ -1472,13 +1473,26 @@
       return "\ufeff" + rows.map(csvLine).join("\n");
     }
 
-    function generateKoreaPostWorkbook(carrierOrders) {
-      const headerRow2 = ["상품구분", "수취인명", "수취인EMAIL", "", "", "", "", "수취인전화", "수취인국가", "", "수취인우편번호", "수취인 상세주소", "수취인 city", "수취인 state", "", "박스포장 실중량(g)", "내용품명", "개수", "순중량(g)", "가격", "통화단위", "HSCODE", "생산지", "", "보험가입여부", "", "EMS구분", "물품종류", "고객주문번호"];
-      while (headerRow2.length < 65) headerRow2.push("");
-      const rows = [["우체국 대량등록 양식"], headerRow2, blankRow(65), blankRow(65), blankRow(65)];
-      carrierOrders.forEach((order) => rows.push(buildKoreaPostRow(order, order.koreaPostType || "Merchandise")));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "우체국등록");
+    async function generateKoreaPostWorkbook(carrierOrders) {
+      const wb = await loadKoreaPostTemplateWorkbook();
+      const sheetName = wb.SheetNames.includes("우체국등록") ? "우체국등록" : wb.SheetNames[0];
+      const templateSheet = wb.Sheets[sheetName];
+      const templateRows = XLSX.utils.sheet_to_json(templateSheet, {
+        header: 1,
+        defval: "",
+        blankrows: true
+      }).slice(0, 5);
+      while (templateRows.length < 5) templateRows.push(blankRow(65));
+      templateRows.forEach((row) => {
+        while (row.length < 65) row.push("");
+      });
+      const dataRows = carrierOrders.map((order) => buildKoreaPostRow(order, order.koreaPostType || "Merchandise"));
+      const outputSheet = XLSX.utils.aoa_to_sheet([...templateRows, ...dataRows]);
+      ["!cols", "!merges", "!rows"].forEach((key) => {
+        if (templateSheet[key]) outputSheet[key] = templateSheet[key];
+      });
+      wb.Sheets[sheetName] = outputSheet;
+      if (!wb.SheetNames.includes(sheetName)) wb.SheetNames.unshift(sheetName);
       return wb;
     }
 
@@ -1686,6 +1700,23 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["NATION NAME", "NATION ENG_NAME"], ["미국", "United States"]]), "국가명_영문명");
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["분류", "컬럼명", "Type", "비고"], ["Generated", "Form", "Auto", "Created by Carrier Format Studio"]]), "참고사항");
+        return wb;
+      }
+    }
+
+    async function loadKoreaPostTemplateWorkbook() {
+      try {
+        const response = await fetch(KOREA_POST_TEMPLATE_PATH);
+        if (!response.ok) throw new Error(`Korea Post template HTTP ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        return XLSX.read(buffer, { type: "array" });
+      } catch (error) {
+        appendLog(`Korea Post template fallback used: ${error.message}`);
+        const headerRow2 = ["상품구분", "수취인명", "수취인EMAIL", "", "", "", "", "수취인전화", "수취인국가", "", "수취인우편번호", "수취인 상세주소", "수취인 city", "수취인 state", "", "박스포장 실중량(g)", "내용품명", "개수", "순중량(g)", "가격", "통화단위", "HSCODE", "생산지", "", "보험가입여부", "", "EMS구분", "물품종류", "고객주문번호"];
+        while (headerRow2.length < 65) headerRow2.push("");
+        const rows = [["우체국 대량등록 양식"], headerRow2, blankRow(65), blankRow(65), blankRow(65)];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "우체국등록");
         return wb;
       }
     }
